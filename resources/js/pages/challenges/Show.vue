@@ -195,7 +195,7 @@ const streakNote = computed(() => {
                     {{ form.processing ? 'Checking…' : 'Lock in answer' }}
                 </button>
                 <p class="hidden items-center gap-1.5 text-sm text-faint sm:flex">
-                    <span class="kbd">A</span><span class="kbd">B</span><span class="kbd">C</span> to choose · <span class="kbd">Enter</span> to lock in
+                    <span v-for="(option, index) in challenge.options" :key="option.id" class="kbd">{{ letters[index] }}</span> to choose · <span class="kbd">Enter</span> to lock in
                 </p>
                 <p class="w-full text-xs text-faint">One attempt only, so take a second look before you lock it in.</p>
             </div>

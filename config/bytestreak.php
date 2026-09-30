@@ -39,6 +39,10 @@ return [
     // Weekends are skipped unless this is on (an explicitly scheduled date always publishes).
     'publish_on_weekends' => (bool) env('BYTESTREAK_WEEKENDS', false),
 
+    // One-click sign-in buttons on the login page. Only ever active when APP_ENV=local;
+    // set BYTESTREAK_DEV_LOGIN=false to require a password even while developing.
+    'dev_login' => (bool) env('BYTESTREAK_DEV_LOGIN', true),
+
     // Limit self sign-up to one email domain (null = open).
     'allowed_email_domain' => env('BYTESTREAK_ALLOWED_DOMAIN') ?: null,
 

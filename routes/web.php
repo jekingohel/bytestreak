@@ -20,8 +20,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
 
-    // One-click sign-in for local development only.
-    if (app()->isLocal()) {
+    // One-click sign-in for local development only (BYTESTREAK_DEV_LOGIN=false turns it off).
+    if (LoginController::devLoginEnabled()) {
         Route::post('/dev-login/{user}', [LoginController::class, 'devLogin'])->name('dev-login');
     }
 });

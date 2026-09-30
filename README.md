@@ -36,7 +36,7 @@ php artisan migrate:fresh --seed
 
 `php artisan db:seed` creates one admin account from `SEED_ADMIN_NAME`, `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` in `.env`. The demo teammates use the same password, with `firstname@demo.bytestreak.test` addresses.
 
-In the `local` environment the login page also shows one-click sign-in buttons for the top accounts, so you never need to type a password while developing. That route does not exist in any other environment.
+In the `local` environment the login page also shows one-click sign-in buttons for the top accounts, so you never need to type a password while developing. That route does not exist in any other environment, and `BYTESTREAK_DEV_LOGIN=false` switches it off locally too.
 
 Anyone can register at `/register`. Set `BYTESTREAK_ALLOWED_DOMAIN=yourcompany.com` to limit sign-up to one email domain. New accounts are plain developers; an admin promotes others under **Admin → Team**.
 

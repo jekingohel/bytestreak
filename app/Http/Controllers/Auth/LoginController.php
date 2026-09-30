@@ -19,7 +19,7 @@ class LoginController extends Controller
     {
         return Inertia::render('auth/Login', [
             // Local-only shortcut: one-click sign-in as any seeded account while developing.
-            'devUsers' => app()->isLocal()
+            'devUsers' => self::devLoginEnabled()
                 ? User::orderByDesc('is_admin')->orderByDesc('xp')->limit(6)->get()
                     ->map(fn (User $u) => [...$u->toIdentity(), 'is_admin' => $u->is_admin, 'xp' => $u->xp])
                 : [],
@@ -63,10 +63,15 @@ class LoginController extends Controller
         return redirect()->route('home');
     }
 
+    public static function devLoginEnabled(): bool
+    {
+        return app()->isLocal() && config('bytestreak.dev_login');
+    }
+
     /** Local environment only — the route is not registered anywhere else. */
     public function devLogin(Request $request, User $user): RedirectResponse
     {
-        abort_unless(app()->isLocal(), 404);
+        abort_unless(self::devLoginEnabled(), 404);
 
         Auth::login($user);
         $request->session()->regenerate();
