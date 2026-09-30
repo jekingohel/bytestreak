@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="62%" r="55%">
+      <stop offset="0" stop-color="#ff6b2c" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#ff6b2c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1e29"/>
+      <stop offset="1" stop-color="#0b0d12"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#tile)"/>
+  <rect width="512" height="512" rx="116" fill="url(#glow)"/>
+  <g>
+    <rect x="231" y="78.5" width="50" height="50" rx="12" fill="#ffc53d"/>
+    <rect x="170" y="139.5" width="50" height="50" rx="12" fill="#ffab2e"/>
+    <rect x="231" y="139.5" width="50" height="50" rx="12" fill="#ffab2e"/>
+    <rect x="170" y="200.5" width="50" height="50" rx="12" fill="#ff8a2a"/>
+    <rect x="231" y="200.5" width="50" height="50" rx="12" fill="#ff8a2a"/>
+    <rect x="292" y="200.5" width="50" height="50" rx="12" fill="#ff8a2a"/>
+    <rect x="109" y="261.5" width="50" height="50" rx="12" fill="#ff6b2c"/>
+    <rect x="170" y="261.5" width="50" height="50" rx="12" fill="#ff6b2c"/>
+    <rect x="231" y="261.5" width="50" height="50" rx="12" fill="#ffe9a8"/>
+    <rect x="292" y="261.5" width="50" height="50" rx="12" fill="#ff6b2c"/>
+    <rect x="353" y="261.5" width="50" height="50" rx="12" fill="#ff6b2c"/>
+    <rect x="109" y="322.5" width="50" height="50" rx="12" fill="#ff5230"/>
+    <rect x="170" y="322.5" width="50" height="50" rx="12" fill="#ff5230"/>
+    <rect x="231" y="322.5" width="50" height="50" rx="12" fill="#ffe9a8"/>
+    <rect x="292" y="322.5" width="50" height="50" rx="12" fill="#ff5230"/>
+    <rect x="353" y="322.5" width="50" height="50" rx="12" fill="#ff5230"/>
+    <rect x="170" y="383.5" width="50" height="50" rx="12" fill="#ff3d33"/>
+    <rect x="231" y="383.5" width="50" height="50" rx="12" fill="#ff3d33"/>
+    <rect x="292" y="383.5" width="50" height="50" rx="12" fill="#ff3d33"/>
+  </g>
+</svg>

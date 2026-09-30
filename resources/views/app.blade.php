@@ -7,6 +7,7 @@
 
         <title inertia>{{ config('app.name') }}</title>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         {{-- Apply the saved theme before first paint so the page never flashes the wrong colours. --}}
         <script>

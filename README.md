@@ -1,3 +1,5 @@
+<p align="center"><img src="art/icon-512.png" width="128" alt="ByteStreak icon"></p>
+
 # ByteStreak
 
 **One byte a day. Keep the streak alive.**
