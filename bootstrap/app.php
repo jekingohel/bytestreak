@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
 
+        // Behind Coolify's proxy the request arrives as plain HTTP; trust the forwarded
+        // headers so Laravel generates https:// URLs (otherwise assets are blocked as mixed content).
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'admin' => EnsureAdmin::class,
         ]);
