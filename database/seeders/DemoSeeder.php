@@ -55,7 +55,7 @@ class DemoSeeder extends Seeder
             $user = User::create([
                 'name' => $name,
                 'email' => str($name)->before(' ')->lower().'@demo.bytestreak.test',
-                'password' => env('SEED_ADMIN_PASSWORD', 'password'),
+                'password' => config('bytestreak.seed_admin.password') ?: 'password',
             ]);
             $joined = Carbon::parse($firstDay ?? today())->subDays(2);
             $user->forceFill(['email_verified_at' => $joined, 'created_at' => $joined])->save();

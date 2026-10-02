@@ -22,12 +22,22 @@ class DatabaseSeeder extends Seeder
             ChallengeSeeder::class,
         ]);
 
-        $admin = User::firstOrNew(['email' => env('SEED_ADMIN_EMAIL', 'admin@bytestreak.test')]);
+        $seed = config('bytestreak.seed_admin');
+        $admin = User::firstOrNew(['email' => $seed['email']]);
 
         if (! $admin->exists) {
+            // Never fall back to a guessable password outside local development.
+            $password = $seed['password'] ?: (app()->isProduction() ? null : 'password');
+
+            if (! $password) {
+                $this->command?->error('SEED_ADMIN_PASSWORD is not set, so no admin account was created. Set it and run db:seed again.');
+
+                return;
+            }
+
             $admin->fill([
-                'name' => env('SEED_ADMIN_NAME', 'Admin'),
-                'password' => env('SEED_ADMIN_PASSWORD', 'password'),
+                'name' => $seed['name'],
+                'password' => $password,
             ]);
             $admin->forceFill(['is_admin' => true, 'email_verified_at' => now()])->save();
         }

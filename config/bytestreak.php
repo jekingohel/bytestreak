@@ -43,6 +43,14 @@ return [
     // set BYTESTREAK_DEV_LOGIN=false to require a password even while developing.
     'dev_login' => (bool) env('BYTESTREAK_DEV_LOGIN', true),
 
+    // The admin account `php artisan db:seed` creates. Read through config (not env() in the
+    // seeder) so it still works when the config is cached on a server.
+    'seed_admin' => [
+        'name' => env('SEED_ADMIN_NAME', 'Admin'),
+        'email' => env('SEED_ADMIN_EMAIL', 'admin@bytestreak.test'),
+        'password' => env('SEED_ADMIN_PASSWORD'),
+    ],
+
     // Limit self sign-up to one email domain (null = open).
     'allowed_email_domain' => env('BYTESTREAK_ALLOWED_DOMAIN') ?: null,
 
