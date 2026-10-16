@@ -6,6 +6,7 @@ use App\Enums\ChallengeStatus;
 use App\Enums\ChallengeType;
 use App\Enums\Difficulty;
 use App\Models\Challenge;
+use App\Models\User;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,22 @@ class ChallengeRequest extends FormRequest
     public function authorize(): bool
     {
         return (bool) $this->user()?->is_admin;
+    }
+
+    /**
+     * Validate a new challenge outside an HTTP request (the MCP tools) with exactly the same rules
+     * as the admin form and the API. Throws ValidationException / AuthorizationException.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function validateFor(User $user, array $data): array
+    {
+        $request = static::create('/', 'POST', $data);
+        $request->setContainer(app())->setRedirector(app('redirect'))->setUserResolver(fn () => $user);
+        $request->validateResolved();
+
+        return $request->validated();
     }
 
     /** @return array<string, mixed> */

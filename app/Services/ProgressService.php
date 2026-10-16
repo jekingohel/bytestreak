@@ -6,6 +6,7 @@ use App\Enums\ChallengeStatus;
 use App\Models\Category;
 use App\Models\Challenge;
 use App\Models\User;
+use App\Models\XpEntry;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +15,45 @@ use Illuminate\Support\Facades\DB;
  */
 class ProgressService
 {
+    public function __construct(
+        private DailyChallengeService $daily,
+        private StreakService $streaks,
+    ) {}
+
+    /** The always-visible game state: who you are, your level, and whether today's challenge is waiting. */
+    public function player(User $user): array
+    {
+        $today = $this->daily->today();
+
+        return [
+            ...$user->toIdentity(),
+            'email' => $user->email,
+            'is_admin' => $user->is_admin,
+            'show_on_leaderboard' => $user->show_on_leaderboard,
+            'xp' => $user->xp,
+            'level' => $user->levelInfo(),
+            'streak' => $this->streaks->current($user),
+            'longest_streak' => $user->longest_streak,
+            'freezes' => $user->streak_freezes,
+            'has_today' => $today !== null,
+            'done_today' => $today !== null && $user->attempts()->where('challenge_id', $today->id)->exists(),
+        ];
+    }
+
+    /** @return array<int, array{id: int, amount: int, reason: string, description: string, created_at: string}> */
+    public function xpHistory(User $user, int $limit = 12): array
+    {
+        return $user->xpEntries()->latest('created_at')->latest('id')->limit($limit)->get()
+            ->map(fn (XpEntry $entry) => [
+                'id' => $entry->id,
+                'amount' => $entry->amount,
+                'reason' => $entry->reason,
+                'description' => $entry->description,
+                'created_at' => $entry->created_at->toIso8601String(),
+            ])
+            ->all();
+    }
+
     /** @return array{completed: int, correct: int, accuracy: int|null, badges: int, longest_streak: int} */
     public function summary(User $user): array
     {

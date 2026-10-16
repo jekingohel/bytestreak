@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Level;
-use App\Services\StreakService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,7 +11,7 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index(StreakService $streaks): Response
+    public function index(): Response
     {
         return Inertia::render('admin/Users', [
             'users' => User::query()
@@ -21,18 +19,7 @@ class UserController extends Controller
                 ->orderByDesc('xp')
                 ->orderBy('name')
                 ->get()
-                ->map(fn (User $user) => [
-                    ...$user->toIdentity(),
-                    'email' => $user->email,
-                    'is_admin' => $user->is_admin,
-                    'xp' => $user->xp,
-                    'level' => Level::forXp($user->xp),
-                    'streak' => $streaks->current($user),
-                    'attempts' => $user->attempts_count,
-                    'accuracy' => $user->attempts_count > 0 ? (int) round($user->correct_count / $user->attempts_count * 100) : null,
-                    'last_completed_on' => $user->last_completed_on?->toDateString(),
-                    'joined' => $user->created_at->toDateString(),
-                ]),
+                ->map->toAdminRow(),
         ]);
     }
 

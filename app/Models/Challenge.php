@@ -100,4 +100,42 @@ class Challenge extends Model
             'category' => $this->category->toChip(),
         ];
     }
+
+    /** A row in the admin list. Expects withCount(['attempts', 'attempts as correct_count' => …]). */
+    public function toAdminRow(): array
+    {
+        return [
+            ...$this->toCard(),
+            'status' => $this->status->value,
+            'is_queued' => $this->status === ChallengeStatus::Scheduled && $this->publish_date === null,
+            'attempts' => $this->attempts_count,
+            'accuracy' => $this->attempts_count > 0
+                ? (int) round($this->correct_count / $this->attempts_count * 100)
+                : null,
+        ];
+    }
+
+    /** The editable fields, in the shape the admin form and ChallengeRequest use. */
+    public function toForm(): array
+    {
+        $this->loadMissing('options');
+
+        return [
+            'id' => $this->id,
+            'category_id' => $this->category_id,
+            'type' => $this->type->value,
+            'difficulty' => $this->difficulty->value,
+            'title' => $this->title,
+            'question' => $this->question,
+            'code_snippet' => $this->code_snippet,
+            'code_language' => $this->code_language,
+            'explanation' => $this->explanation,
+            'xp' => $this->xp,
+            'status' => $this->status->value,
+            'publish_date' => $this->publish_date?->toDateString(),
+            'options' => $this->options->map(fn (ChallengeOption $o) => ['id' => $o->id, 'label' => $o->label]),
+            'correct_index' => max(0, (int) $this->options->search(fn (ChallengeOption $o) => $o->is_correct)),
+            'attempts' => $this->attempts()->count(),
+        ];
+    }
 }

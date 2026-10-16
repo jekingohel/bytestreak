@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,30 +14,24 @@ class CategoryController extends Controller
     public function index(): Response
     {
         return Inertia::render('admin/Categories', [
-            'categories' => Category::ordered()->withCount('challenges')->get()->map(fn (Category $category) => [
-                ...$category->toChip(),
-                'description' => $category->description,
-                'sort_order' => $category->sort_order,
-                'is_active' => $category->is_active,
-                'challenges' => $category->challenges_count,
-            ]),
+            'categories' => Category::ordered()->withCount('challenges')->get()->map->toAdminRow(),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(CategoryRequest $request): RedirectResponse
     {
-        $data = $this->validated($request);
+        $data = $request->validated();
 
-        Category::create([...$data, 'slug' => $this->uniqueSlug($data['name'])]);
+        Category::create([...$data, 'slug' => Category::uniqueSlug($data['name'])]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category added.']);
 
         return back();
     }
 
-    public function update(Request $request, Category $category): RedirectResponse
+    public function update(CategoryRequest $request, Category $category): RedirectResponse
     {
-        $category->update($this->validated($request, $category));
+        $category->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category saved.']);
 
@@ -59,29 +51,5 @@ class CategoryController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category deleted.']);
 
         return back();
-    }
-
-    /** @return array<string, mixed> */
-    private function validated(Request $request, ?Category $category = null): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:60', Rule::unique('categories', 'name')->ignore($category)],
-            'emoji' => ['required', 'string', 'max:16'],
-            'color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'sort_order' => ['required', 'integer', 'min:0', 'max:999'],
-            'is_active' => ['required', 'boolean'],
-        ]);
-    }
-
-    private function uniqueSlug(string $name): string
-    {
-        $base = Str::slug($name) ?: 'category';
-        $slug = $base;
-        for ($i = 2; Category::where('slug', $slug)->exists(); $i++) {
-            $slug = "{$base}-{$i}";
-        }
-
-        return $slug;
     }
 }

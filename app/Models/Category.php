@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUniqueSlug;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['name', 'slug', 'emoji', 'color', 'description', 'sort_order', 'is_active'])]
 class Category extends Model
 {
+    use HasUniqueSlug;
+
     protected function casts(): array
     {
         return [
@@ -36,6 +39,18 @@ class Category extends Model
             'slug' => $this->slug,
             'emoji' => $this->emoji,
             'color' => $this->color,
+        ];
+    }
+
+    /** A row in the admin list. Expects withCount('challenges'). */
+    public function toAdminRow(): array
+    {
+        return [
+            ...$this->toChip(),
+            'description' => $this->description,
+            'sort_order' => $this->sort_order,
+            'is_active' => $this->is_active,
+            'challenges' => $this->challenges_count,
         ];
     }
 }
