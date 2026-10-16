@@ -51,6 +51,14 @@ return [
         'password' => env('SEED_ADMIN_PASSWORD'),
     ],
 
+    'api_tokens' => [
+        // Tokens from POST /api/v1/auth/login expire after this many days (0 = never).
+        'login_days' => (int) env('BYTESTREAK_API_LOGIN_DAYS', 30),
+
+        // Lifetimes an admin can pick when creating a token on the profile page (0 = never expires).
+        'choices_days' => [30, 90, 365, 0],
+    ],
+
     // Limit self sign-up to one email domain (null = open).
     'allowed_email_domain' => env('BYTESTREAK_ALLOWED_DOMAIN') ?: null,
 

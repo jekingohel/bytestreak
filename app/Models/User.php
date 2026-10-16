@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Level;
+use App\Services\StreakService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -12,13 +13,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password', 'show_on_leaderboard'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Mirror the column defaults so a just-created model is usable without a refresh.
@@ -99,6 +101,23 @@ class User extends Authenticatable
             'name' => $this->name,
             'initials' => $this->initials(),
             'hue' => $this->avatarHue(),
+        ];
+    }
+
+    /** A row in the admin list. Expects withCount(['attempts', 'attempts as correct_count' => …]). */
+    public function toAdminRow(): array
+    {
+        return [
+            ...$this->toIdentity(),
+            'email' => $this->email,
+            'is_admin' => $this->is_admin,
+            'xp' => $this->xp,
+            'level' => Level::forXp($this->xp),
+            'streak' => app(StreakService::class)->current($this),
+            'attempts' => $this->attempts_count,
+            'accuracy' => $this->attempts_count > 0 ? (int) round($this->correct_count / $this->attempts_count * 100) : null,
+            'last_completed_on' => $this->last_completed_on?->toDateString(),
+            'joined' => $this->created_at->toDateString(),
         ];
     }
 }

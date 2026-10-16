@@ -44,6 +44,23 @@ class BadgeService
         ];
     }
 
+    /**
+     * Every active badge with whether $user has it and how close they are.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function catalogue(User $user): Collection
+    {
+        $metrics = $this->metrics($user);
+        $earned = $user->badges()->pluck('user_badges.earned_at', 'badges.id');
+
+        return Badge::active()->ordered()->get()->map(fn (Badge $badge) => [
+            ...$badge->toTile(),
+            'earned_at' => $earned->has($badge->id) ? Carbon::parse($earned[$badge->id])->toIso8601String() : null,
+            'progress' => $this->progress($badge, $metrics),
+        ]);
+    }
+
     /** @return array{current: int, target: int, remaining: int, percent: int} */
     public function progress(Badge $badge, array $metrics): array
     {

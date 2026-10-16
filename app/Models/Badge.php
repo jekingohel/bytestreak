@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BadgeCriteria;
+use App\Models\Concerns\HasUniqueSlug;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 ])]
 class Badge extends Model
 {
+    use HasUniqueSlug;
+
     protected function casts(): array
     {
         return [
@@ -54,6 +57,21 @@ class Badge extends Model
             'description' => $this->description,
             'emoji' => $this->emoji,
             'xp_bonus' => $this->xp_bonus,
+        ];
+    }
+
+    /** A row in the admin list. Expects withCount('users'). */
+    public function toAdminRow(): array
+    {
+        return [
+            ...$this->toTile(),
+            'criteria_type' => $this->criteria_type->value,
+            'criteria_label' => $this->criteria_type->label(),
+            'criteria_value' => $this->criteria_value,
+            'category_id' => $this->category_id,
+            'sort_order' => $this->sort_order,
+            'is_active' => $this->is_active,
+            'earned_by' => $this->users_count,
         ];
     }
 }

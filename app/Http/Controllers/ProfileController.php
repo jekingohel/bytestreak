@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\XpEntry;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Services\LeaderboardService;
 use App\Services\ProgressService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ProfileController extends Controller
 {
@@ -23,39 +24,34 @@ class ProfileController extends Controller
             'mastery' => $progress->categoryMastery($user),
             'rank' => $leaderboard->rankOf($user, LeaderboardService::ALL_TIME),
             'joined' => $user->created_at->toIso8601String(),
-            'xpHistory' => $user->xpEntries()->latest('created_at')->latest('id')->limit(12)->get()
-                ->map(fn (XpEntry $entry) => [
-                    'id' => $entry->id,
-                    'amount' => $entry->amount,
-                    'reason' => $entry->reason,
-                    'description' => $entry->description,
-                    'created_at' => $entry->created_at->toIso8601String(),
+            'xpHistory' => $progress->xpHistory($user),
+            'apiTokens' => $user->is_admin ? [
+                'base_url' => url('/api/v1'),
+                'choices_days' => config('bytestreak.api_tokens.choices_days'),
+                'tokens' => $user->tokens()->latest()->get()->map(fn (PersonalAccessToken $token) => [
+                    'id' => $token->id,
+                    'name' => $token->name,
+                    'created_at' => $token->created_at->toIso8601String(),
+                    'last_used_at' => $token->last_used_at?->toIso8601String(),
+                    'expires_at' => $token->expires_at?->toIso8601String(),
+                    'expired' => (bool) $token->expires_at?->isPast(),
                 ]),
+            ] : null,
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateProfileRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:80'],
-            'show_on_leaderboard' => ['required', 'boolean'],
-        ]);
-
-        $request->user()->update($data);
+        $request->user()->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Profile saved.']);
 
         return back();
     }
 
-    public function password(Request $request): RedirectResponse
+    public function password(UpdatePasswordRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-        ]);
-
-        $request->user()->update(['password' => $data['password']]);
+        $request->user()->update(['password' => $request->validated('password')]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Password updated.']);
 

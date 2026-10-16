@@ -1,7 +1,7 @@
 <script setup>
-import { computed } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { Award, Check, Flame, LogOut, Moon, Sun, Target, Trophy, Zap } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Award, Check, Copy, Flame, KeyRound, LogOut, Moon, Sun, Target, Trash2, Trophy, Zap } from '@lucide/vue';
 import Avatar from '@/components/Avatar.vue';
 import Heatmap from '@/components/Heatmap.vue';
 import LevelRing from '@/components/LevelRing.vue';
@@ -16,6 +16,8 @@ const props = defineProps({
     rank: { type: Number, default: null },
     joined: { type: String, required: true },
     xpHistory: { type: Array, required: true },
+    // Admins only: { base_url, choices_days, tokens }
+    apiTokens: { type: Object, default: null },
 });
 
 const user = computed(() => usePage().props.auth.user);
@@ -27,6 +29,35 @@ const password = useForm({ current_password: '', password: '', password_confirma
 const saveProfile = () => profile.patch(route('profile.update'), { preserveScroll: true });
 const savePassword = () =>
     password.put(route('profile.password'), { preserveScroll: true, onSuccess: () => password.reset(), onError: () => password.reset('current_password') });
+
+// Personal API tokens. The plain-text token is flashed once, right after it is created.
+const tokenForm = useForm({ name: '', expires_in_days: 90 });
+const createToken = () => tokenForm.post(route('profile.tokens.store'), { preserveScroll: true, onSuccess: () => tokenForm.reset('name') });
+const revokeToken = (token) => {
+    if (confirm(`Revoke “${token.name}”? Anything using it loses access immediately.`)) {
+        router.delete(route('profile.tokens.destroy', token.id), { preserveScroll: true });
+    }
+};
+
+const page = usePage();
+const newToken = ref(null);
+const copied = ref(false);
+watch(
+    () => page.flash?.token,
+    (token) => {
+        if (!token) return;
+        newToken.value = token;
+        copied.value = false;
+    },
+    { immediate: true },
+);
+const copyToken = async () => {
+    await navigator.clipboard.writeText(newToken.value.plain_text);
+    copied.value = true;
+};
+
+const lifetimeLabel = (days) => (days === 0 ? 'Never expires' : days >= 365 ? `${days / 365} year` : `${days} days`);
+const dateLabel = (iso) => new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
 
 const joinedLabel = computed(() => new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(new Date(props.joined)));
 
@@ -156,6 +187,58 @@ const REASON_ICONS = { correct: Check, participation: Flame, streak_bonus: Flame
                     </button>
                     <Link :href="route('logout')" method="post" as="button" class="btn btn-ghost"><LogOut :size="17" /> Log out</Link>
                 </div>
+            </section>
+
+            <!-- API tokens (admins) -->
+            <section v-if="apiTokens" class="card p-6">
+                <h2 class="flex items-center gap-2 text-lg font-bold"><KeyRound :size="19" class="text-gold" /> API tokens</h2>
+                <p class="mt-1 text-sm leading-relaxed text-soft">
+                    Lets a script or an MCP server act as you on the ByteStreak API, including adding questions. Send it as
+                    <code class="text-xs">Authorization: Bearer &lt;token&gt;</code> to <code class="text-xs">{{ apiTokens.base_url }}</code>.
+                </p>
+
+                <div v-if="newToken" class="mt-5 rounded-xl border border-gold/40 bg-gold/8 p-4" role="status">
+                    <p class="text-sm font-semibold">“{{ newToken.name }}” is ready. Copy it now: it will not be shown again.</p>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <code class="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-xs break-all select-all">{{ newToken.plain_text }}</code>
+                        <button type="button" class="btn btn-ghost btn-sm" @click="copyToken">
+                            <component :is="copied ? Check : Copy" :size="15" /> {{ copied ? 'Copied' : 'Copy' }}
+                        </button>
+                    </div>
+                    <button type="button" class="mt-3 text-xs font-semibold text-faint hover:text-soft" @click="newToken = null">I have saved it</button>
+                </div>
+
+                <form class="mt-5 grid gap-4 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end" @submit.prevent="createToken">
+                    <div>
+                        <label class="label" for="token_name">Token name</label>
+                        <input id="token_name" v-model="tokenForm.name" type="text" class="input" placeholder="e.g. ByteStreak MCP" maxlength="60" required :aria-invalid="!!tokenForm.errors.name" />
+                        <p v-if="tokenForm.errors.name" class="field-error">{{ tokenForm.errors.name }}</p>
+                    </div>
+                    <div>
+                        <label class="label" for="token_expiry">Expires</label>
+                        <select id="token_expiry" v-model.number="tokenForm.expires_in_days" class="input">
+                            <option v-for="days in apiTokens.choices_days" :key="days" :value="days">{{ days === 0 ? 'Never' : `In ${lifetimeLabel(days)}` }}</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" :disabled="tokenForm.processing || !tokenForm.name.trim()">Create token</button>
+                </form>
+
+                <ul v-if="apiTokens.tokens.length" class="mt-6 divide-y divide-line border-t border-line">
+                    <li v-for="token in apiTokens.tokens" :key="token.id" class="flex flex-wrap items-center gap-3 py-3">
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate text-sm font-semibold">{{ token.name }}</span>
+                            <span class="text-xs text-faint">
+                                Created {{ dateLabel(token.created_at) }} ·
+                                {{ token.last_used_at ? `last used ${timeAgo(token.last_used_at)}` : 'never used' }} ·
+                                <span :class="token.expired ? 'font-semibold text-rose' : ''">
+                                    {{ token.expires_at ? `${token.expired ? 'expired' : 'expires'} ${dateLabel(token.expires_at)}` : 'never expires' }}
+                                </span>
+                            </span>
+                        </span>
+                        <button type="button" class="btn btn-danger btn-sm" @click="revokeToken(token)"><Trash2 :size="14" /> Revoke</button>
+                    </li>
+                </ul>
+                <p v-else class="mt-6 border-t border-line pt-4 text-sm text-faint">No tokens yet.</p>
             </section>
         </div>
 

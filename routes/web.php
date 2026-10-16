@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -42,6 +43,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
+
+    // Personal API tokens (Sanctum), e.g. for an MCP server. Admins only for now.
+    Route::middleware('admin')->group(function () {
+        Route::post('/profile/tokens', [ApiTokenController::class, 'store'])->name('profile.tokens.store');
+        Route::delete('/profile/tokens/{token}', [ApiTokenController::class, 'destroy'])->name('profile.tokens.destroy');
+    });
 
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');

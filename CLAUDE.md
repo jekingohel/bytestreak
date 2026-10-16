@@ -17,8 +17,8 @@ php artisan challenges:publish-daily    # what the scheduler runs at 00:01
 
 ## Rules that are easy to break
 
-- **Never send the answer early.** `ChallengeController@show` only adds `is_correct`, `percent` and
-  `explanation` once the user has an attempt. `Challenge::toCard()` must stay free of answer data.
+- **Never send the answer early.** `ChallengeViewService::detail` (used by the page and the API) only adds
+  `is_correct`, `percent` and `explanation` once the user has an attempt. `Challenge::toCard()` must stay free of answer data.
 - **All scoring goes through `AttemptService::submit()`**: one transaction that writes the attempt,
   the `xp_ledger` rows, the streak and any badges. `users.xp`, `current_streak`, `longest_streak` and
   `streak_freezes` are caches of that; never update them anywhere else.
@@ -27,10 +27,29 @@ php artisan challenges:publish-daily    # what the scheduler runs at 00:01
   breaks a streak (`StreakService::missedSince`).
 - **`publish_date` is a DATE column.** Filter it with `whereDate()`, never `where()`/`whereBetween()`
   with strings: tests run on SQLite, where a date cast is stored as `Y-m-d 00:00:00`.
-- **Challenge options are edited in place** (`Admin\ChallengeController::persist`) so existing
+- **Challenge options are edited in place** (`ChallengeService::save`) so existing
   attempts keep pointing at the right option. An option somebody picked cannot be removed.
 - Tests move the clock with `$this->travelToDay()` (in `tests/TestCase.php`), which also clears the
   memoised "today's challenge".
+
+## JSON API
+
+- `routes/api.php`, served at `/api/v1/*` with route names `api.*`, guarded by `auth:sanctum`. Clients either send
+  `Authorization: Bearer <token>` (from `POST /api/v1/auth/login`, or created by an admin on the profile page; each token carries its own
+  `expires_at`, so `sanctum.expiration` stays null) or, from a
+  `SANCTUM_STATEFUL_DOMAINS` origin, use the page session plus the X-XSRF-TOKEN header (`statefulApi()` in
+  `bootstrap/app.php`).
+- API and page controllers share their logic: `ChallengeViewService` and `ProgressService` (player), and
+  `ChallengeService`, the form requests and the models' `toAdminRow()` (admin). Change it there, not in a controller.
+- Conflicts (deleting something in use, re-queuing an answered challenge) return 409. Validation errors return 422.
+
+## MCP server
+
+- `laravel/mcp`: `POST /mcp` (`routes/ai.php`) serves `App\Mcp\Servers\ByteStreakServer`, behind `auth:sanctum` + `admin`.
+  Admins create the token on their profile page.
+- Tools live in `app/Mcp/Tools`. `create-challenge` validates through `ChallengeRequest::validateFor()` and saves
+  through `ChallengeService::save()`. Keep it that way, so the admin form, the API and MCP share one set of rules.
+- Test tools with `ByteStreakServer::actingAs($user)->tool(SomeTool::class, [...])` (see `tests/Feature/McpServerTest.php`).
 
 ## Front end
 
